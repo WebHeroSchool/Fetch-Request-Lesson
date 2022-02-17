@@ -1,29 +1,39 @@
-let url = window.location.toString();
+const preloader = document.querySelector('.preloader');
+
+let url = window.location.toString();	
 
 function checkUser(url) {
-	let newString = url.split('=');
-	let name = newString[1];
-	if (name == undefined) {
-		name = 'oliviia313';
-	}
-	return name;
+	return new Promise(function(resolve, reject) {
+    	let name = url.split('=')[1];
+ 		if (name == undefined) {
+			name = 'oliviia313';
+		}
+		resolve(name);
+	})   
 }
+ 
+let getDate = new Promise ((resolve, reject) => {
+	let date = new Date();
+	let tdate = document.createElement('p');
+ 	tdate.innerHTML = date;
+	setTimeout(() => (tdate ? resolve (tdate) : reject("Ошибка вычисления времени.")), 3000);
+});
 
-function handleErrors(response) {
-    if (!response.ok) {
-        throw Error(response.statusText);
-    }
-    return response;
-}
-
-fetch(`https://api.github.com/users/${checkUser(url)}`)
-	.then(handleErrors)
-	.then(response => response.json())
-	.then(json => {
-		console.log(json.avatar_url);
+Promise.all([getDate])
+	.then(setTimeout(() => preloader.classList.add('loaded_hiding'), 3000))
+	.then(([tdate]) => document.body.append(tdate))
+    checkUser(url).then((name) => fetch(`https://api.github.com/users/${name}`))
+    .then(response => {
+    	if (!response.ok) {
+    	throw response
+    	}
+    	return response.json() 
+    })
+    .then((json) => { 
+  		console.log(json.avatar_url);
 		console.log(json.name);
 		console.log(json.bio);
-		console.log(json.html_url)
+		console.log(json.html_url);
 
 		let username = document.createElement('h2');
 		if (json.name !== null) {
@@ -33,8 +43,7 @@ fetch(`https://api.github.com/users/${checkUser(url)}`)
 			username.innerHTML = 'Имя пользователя недоступно';
 		}
 		username.addEventListener('click', () => location.assign(json.html_url));
-		username.style.cursor = "pointer";
-
+		
 		let userbio = document.createElement('p');
 		if (json.bio !== null) {
 			userbio.innerHTML = json.bio;
@@ -47,8 +56,11 @@ fetch(`https://api.github.com/users/${checkUser(url)}`)
 		img.src = json.avatar_url;
 		document.body.append(img);
 		img.onerror = () => document.body.innerHTML = 'Ошибка загрузки изображения';
-})
+	})
 	.catch(error => document.body.innerHTML = 'Информация о пользователе недоступна');
+
+
+	
 
 
 
